@@ -1,0 +1,56 @@
+@startuml
+top to bottom direction
+
+package "constants/" {
+  [constants/index.ts\n+ offers: Array] as Constants
+}
+
+package "app/ (Expo Router)" {
+  [app/_layout.tsx\nRootLayout()] as RootLayout
+  [app/globals.css] as GlobalsCss
+
+  [app/index.tsx\nHomeScreen] as Home
+}
+
+package "Expo Router runtime" {
+  [Stack navigator] as Stack
+  [File-based routing] as Routing
+}
+
+Routing --> RootLayout : uses as root layout
+RootLayout --> GlobalsCss : imports
+RootLayout --> Stack : returns <Stack .../>
+
+Constants --> Home : import { offers }
+
+Home --> GlobalsCss : imports
+
+note bottom of RootLayout
+- Entry point for navigation.
+- Place for init: fonts, splash, providers.
+end note
+
+note right of Routing
+- Routes are created from the file structure. Every file under app (no reserved files like _layout)
+- create their own Page/Route
+- Expo scans /app and build based on that the Routing-Tree
+end note
+
+note left of Stack
+- Manages navigation as Stack, every new Screen is added on top.
+- While going back the top screen is removed from the stack resulting
+- in the typical behavior of Open Details, press Back, going back to Home Screen etc.
+end note
+
+note bottom of Stack
+screenOptions = defaults for all screens in this Stack
+(e.g., headerShown=false)
+end note
+
+note right of Constants
+- Centralized data & assets
+- Imported by screens via @/ alias
+- Enables easy updates without touching UI code
+end note
+
+@enduml
