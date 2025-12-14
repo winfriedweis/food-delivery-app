@@ -1,5 +1,5 @@
 import {FlatList, Pressable, Text, TouchableOpacity, View} from "react-native";
-import "./globals.css"
+import "../globals.css"
 import {SafeAreaView} from "react-native-safe-area-context";
 import {images, offers} from "@/constants";
 
@@ -15,6 +15,7 @@ import {Image} from "@/components/ExpoImage";
 
 // Utility für das bedingte zusammenstellen von Klassen sonst offer-card zb. doppelt
 import cn from 'clsx';
+import CartButton from "@/components/CartButton";
 
 // export default ist der Hauptexport dieser Datei und automatisch Route app/index.tsx = /
 // Komponenten sind Funktionen die JSX zurückgeben - Javascript + XML also kein gültiges JS
@@ -97,8 +98,8 @@ export default function Index() {
                                 <Text className="paragraph-bold text-dark-100">Germany</Text>
                                 <Image source={images.arrowDown} className="size-3" contentFit="contain"/>
                             </TouchableOpacity>
-                            <Text>Cart</Text>
                         </View>
+                        <CartButton/>
                     </View>
                 )}
             />

@@ -9,7 +9,20 @@ package "app/ (Expo Router)" {
   [app/_layout.tsx\nRootLayout()] as RootLayout
   [app/globals.css] as GlobalsCss
 
-  [app/index.tsx\nHomeScreen] as Home
+
+  package "auth" {
+   [app/(auth)/_layout.tsx\n_Layout()] as AuthLayout
+   [app/(auth)/sign-in.tsx\nsignIn()] as SignIn
+   [app/(auth)/sign-up.tsx\nsignUp()] as SignUp
+  }
+
+  package "tabs" {
+  [app/(tabs)/index.tsx\nIndex()] as Homescreen
+  [app/(tabs)/_layout.tsx\n_Layout()] as HomeLayout
+  [app/(tabs)/cart.tsx\nCart()] as Cart
+  [app/(tabs)/profile.tsx\nProfile()] as Profile
+  [app/(tabs)/search.tsx\nSearch()] as Search
+  }
 }
 
 package "Expo Router runtime" {
@@ -21,9 +34,9 @@ Routing --> RootLayout : uses as root layout
 RootLayout --> GlobalsCss : imports
 RootLayout --> Stack : returns <Stack .../>
 
-Constants --> Home : import { offers }
+Constants --> Homescreen : import { offers }
 
-Home --> GlobalsCss : imports
+Homescreen --> GlobalsCss : imports
 
 note bottom of RootLayout
 - Entry point for navigation.
