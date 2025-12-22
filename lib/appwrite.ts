@@ -18,23 +18,24 @@ client
     .setPlatform(appwriteConfig.platform)
 
 export const account = new Account(client);
-export const tablesDB = new TablesDB(client); // ✅ NEU: TablesDB statt Databases
+export const tablesDB = new TablesDB(client); // NEU: TablesDB statt Databases - Appwrite Update
 export const avatars = new Avatars(client);
 
 /**
- * ✅ Erstellt einen neuen Benutzer mit Account und Datenbank-Eintrag
+ * Erstellt einen neuen Benutzer mit Account und Datenbank-Eintrag
  * @param email - E-Mail des Benutzers
  * @param password - Passwort (min. 8 Zeichen)
  * @param name - Vollständiger Name des Benutzers
  * @returns User-Row aus der Datenbank
  */
+
 export const createUser = async ({
                                      email,
                                      password,
                                      name
                                  }: CreateUserParams) => {
     try {
-        // Step 1: ✅ Account erstellen (Auth)
+        // Account erstellen (Auth)
         const newAccount = await account.create({
             userId: ID.unique(),
             email: email,
@@ -46,19 +47,19 @@ export const createUser = async ({
             throw new Error("Failed to create account");
         }
 
-        // Step 2: ✅ Avatar URL generieren VOR Datenbank-Insert
+        // Avatar URL generieren VOR Datenbank-Insert
         const avatarUrl = avatars.getInitialsURL(name);
 
-        // Step 3: ✅ Benutzer anmelden
+        // Benutzer anmelden
         await signInWithEmail({email, password});
 
-        // Step 4: ✅ User-Row in der neuen Tables API erstellen (statt createDocument)
+        // User-Row in der neuen Tables API erstellen (statt createDocument)
         const userRow = await tablesDB.createRow({
             databaseId: appwriteConfig.databaseId,
             tableId: appwriteConfig.userTableId,
-            rowId: newAccount.$id, // ✅ accountId als Primary Key verwenden
+            rowId: newAccount.$id, // accountId als Primary Key verwenden
             data: {
-                accountId: newAccount.$id, // ✅ Redundant aber für Queries nützlich
+                accountId: newAccount.$id, // Redundant aber für Queries nützlich
                 email: email,
                 name: name,
                 avatar: avatarUrl
@@ -91,6 +92,7 @@ export const createUser = async ({
  * @param password - Passwort des Benutzers
  * @returns Session-Objekt mit Session-Token
  */
+
 export const signInWithEmail = async ({
                                           email,
                                           password
@@ -99,7 +101,7 @@ export const signInWithEmail = async ({
     password: string;
 }) => {
     try {
-        // ✅ NEU: createEmailPasswordSession erwartet ein Objekt (nicht zwei separate Parameter)
+        // createEmailPasswordSession erwartet ein Objekt (nicht zwei separate Parameter wie vor Appwrite Update)
         const session = await account.createEmailPasswordSession({
             email: email,
             password: password
