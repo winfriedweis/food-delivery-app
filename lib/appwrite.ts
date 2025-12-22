@@ -1,12 +1,13 @@
-import {Account, Avatars, Client, Databases} from "react-native-appwrite";
-import {CreateUserParams, CreateUserPrams} from "@/type";
+import {Account, Avatars, Client, ID} from "react-native-appwrite";
+import {TablesDB} from "react-native-appwrite";
+import {CreateUserParams} from "@/type";
 
 export const appwriteConfig = {
     endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
     projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
     platform: "com.winfriedweis.fooddeliveryapp",
     databaseId: "693fe308003869df3b88",
-    tableId: "user"
+    userTableId: "user"
 }
 
 export const client = new Client();
@@ -17,13 +18,124 @@ client
     .setPlatform(appwriteConfig.platform)
 
 export const account = new Account(client);
-export const database = new Databases(client);
-export const avatar = new Avatars(client);
+export const tablesDB = new TablesDB(client); // ✅ NEU: TablesDB statt Databases
+export const avatars = new Avatars(client);
 
-export const createUser = async ({email, password, name}): CreateUserParams => {
+/**
+ * ✅ Erstellt einen neuen Benutzer mit Account und Datenbank-Eintrag
+ * @param email - E-Mail des Benutzers
+ * @param password - Passwort (min. 8 Zeichen)
+ * @param name - Vollständiger Name des Benutzers
+ * @returns User-Row aus der Datenbank
+ */
+export const createUser = async ({
+                                     email,
+                                     password,
+                                     name
+                                 }: CreateUserParams) => {
     try {
-        const new Account = await account.create()
-    } catch (e) {
-        throw new Error(e as string);
+        // Step 1: ✅ Account erstellen (Auth)
+        const newAccount = await account.create({
+            userId: ID.unique(),
+            email: email,
+            password: password,
+            name: name
+        });
+
+        if (!newAccount || !newAccount.$id) {
+            throw new Error("Failed to create account");
+        }
+
+        // Step 2: ✅ Avatar URL generieren VOR Datenbank-Insert
+        const avatarUrl = avatars.getInitialsURL(name);
+
+        // Step 3: ✅ Benutzer anmelden
+        await signInWithEmail({email, password});
+
+        // Step 4: ✅ User-Row in der neuen Tables API erstellen (statt createDocument)
+        const userRow = await tablesDB.createRow({
+            databaseId: appwriteConfig.databaseId,
+            tableId: appwriteConfig.userTableId,
+            rowId: newAccount.$id, // ✅ accountId als Primary Key verwenden
+            data: {
+                accountId: newAccount.$id, // ✅ Redundant aber für Queries nützlich
+                email: email,
+                name: name,
+                avatar: avatarUrl
+                // $createdAt und $updatedAt werden automatisch gesetzt
+            }
+        });
+
+        if (!userRow) {
+            throw new Error("Failed to create user row");
+        }
+
+        return userRow;
+
+    } catch (error) {
+        console.error("[createUser] Error:", error);
+
+        const errorMessage = error instanceof Error
+            ? error.message
+            : typeof error === 'string'
+                ? error
+                : 'Unknown error occurred';
+
+        throw new Error(`Failed to create user: ${errorMessage}`);
     }
+}
+
+/**
+ * ✅ Meldet einen Benutzer mit E-Mail und Passwort an
+ * @param email - E-Mail des Benutzers
+ * @param password - Passwort des Benutzers
+ * @returns Session-Objekt mit Session-Token
+ */
+export const signInWithEmail = async ({
+                                          email,
+                                          password
+                                      }: {
+    email: string;
+    password: string;
+}) => {
+    try {
+        // ✅ NEU: createEmailPasswordSession erwartet ein Objekt (nicht zwei separate Parameter)
+        const session = await account.createEmailPasswordSession({
+            email: email,
+            password: password
+        });
+
+        if (!session || !session.$id) {
+            throw new Error("Failed to create session");
+        }
+
+        return session;
+
+    } catch (error) {
+        console.error("[signInWithEmail] Error:", error);
+
+        const errorMessage = error instanceof Error
+            ? error.message
+            : typeof error === 'string'
+                ? error
+                : 'Authentication failed';
+
+        throw new Error(`Sign in failed: ${errorMessage}`);
+    }
+}
+
+export const getCurrentUser = async () => {
+    const currentAccount = await account.get();
+
+    // Mit rowId - Query's sind outdated
+    const userRow = await tablesDB.getRow({
+        databaseId: appwriteConfig.databaseId,
+        tableId: appwriteConfig.userTableId,
+        rowId: currentAccount.$id
+    });
+
+    return {
+        account: currentAccount,
+        user: userRow
+    };
 }
