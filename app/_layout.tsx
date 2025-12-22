@@ -10,12 +10,32 @@ import {SplashScreen, Stack} from "expo-router";
 import './globals.css';
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://0874b0aff61263c4f63e90aa59e58519@o4510580601192448.ingest.de.sentry.io/4510580603420752',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 // Einstiegspunkt für alles im /app Ordner.
 //Sämtliche Routen werden unter dieser Funktion gerendert
 //RootLayout wird gerendert und startet useFonts
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
 
   // useFonts ist ein Hook von Expo der Fonts zur Laufzeit lädt.
   // gibt boolean oder Error zurück → App rendert erst wenn fontsLoaded == true
@@ -51,4 +71,4 @@ export default function RootLayout() {
   // (statt vorher const opts = ... zu schreiben).
 
   return <Stack screenOptions={{ headerShown: false }} />;
-}
+});

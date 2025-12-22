@@ -1,7 +1,8 @@
-import {FlatList, Pressable, Text, TouchableOpacity, View} from "react-native";
+import {Button, FlatList, Pressable, Text, TouchableOpacity, View} from "react-native";
 import "../globals.css"
 import {SafeAreaView} from "react-native-safe-area-context";
 import {images, offers} from "@/constants";
+import * as Sentry from "@sentry/react-native";
 
 // Fragment ist ein unsichtbarer Container ohne DOM Node für return da View und Text
 // nicht nebeneinander stehen dürfen
