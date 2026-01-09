@@ -39,44 +39,29 @@ const data = dummyData as DummyData;
  */
 async function clearTable(tableId: string): Promise<void> {
     try {
-        const list = await tablesDB.listRows(
-            appwriteConfig.databaseId,
-            tableId
-        );
+        const list = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseId,
+            tableId: tableId,
+        });
 
         await Promise.all(
             list.rows.map((row: any) =>
-                tablesDB.deleteRow(
-                    appwriteConfig.databaseId,
-                    tableId,
-                    row.$id
-                )
+                tablesDB.deleteRow({
+                    databaseId: appwriteConfig.databaseId,
+                    tableId: tableId,
+                    rowId: row.$id,
+                })
             )
         );
-        console.log(`✅ Table ${tableId} cleared`);
     } catch (error) {
         console.error(`Error clearing table ${tableId}:`, error);
     }
 }
 
-/**
- * Lädt ein Bild von einer URL herunter (falls nötig)
- * Hinweis: Für jetzt verwenden wir die externe URL direkt
- */
 async function getImageUrl(imageUrl: string): Promise<string> {
-    // Falls Sie Storage später implementieren möchten:
-    // const response = await fetch(imageUrl);
-    // const blob = await response.blob();
-    // const file = await storage.createFile(...);
-    // return storage.getFileViewURL(...);
-
-    // Für jetzt: externe URL direkt verwenden
     return imageUrl;
 }
 
-/**
- * Befüllt die Datenbank mit Dummy-Daten
- */
 async function seed(): Promise<void> {
     try {
         console.log("🌱 Starting seeding...");
@@ -92,15 +77,15 @@ async function seed(): Promise<void> {
         console.log("📂 Creating categories...");
         const categoryMap: Record<string, string> = {};
         for (const cat of data.categories) {
-            const row = await tablesDB.createRow(
-                appwriteConfig.databaseId,
-                appwriteConfig.categoriesTableId,
-                ID.unique(),
-                {
+            const row = await tablesDB.createRow({
+                databaseId: appwriteConfig.databaseId,
+                tableId: appwriteConfig.categoriesTableId,
+                rowId: ID.unique(),
+                data: {
                     name: cat.name,
                     description: cat.description,
-                }
-            );
+                },
+            });
             categoryMap[cat.name] = row.$id;
             console.log(`  ✓ Created category: ${cat.name}`);
         }
@@ -109,16 +94,16 @@ async function seed(): Promise<void> {
         console.log("🍕 Creating customizations...");
         const customizationMap: Record<string, string> = {};
         for (const cus of data.customizations) {
-            const row = await tablesDB.createRow(
-                appwriteConfig.databaseId,
-                appwriteConfig.customizationsTableId,
-                ID.unique(),
-                {
+            const row = await tablesDB.createRow({
+                databaseId: appwriteConfig.databaseId,
+                tableId: appwriteConfig.customizationsTableId,
+                rowId: ID.unique(),
+                data: {
                     name: cus.name,
                     price: cus.price,
                     type: cus.type,
-                }
-            );
+                },
+            });
             customizationMap[cus.name] = row.$id;
             console.log(`  ✓ Created customization: ${cus.name}`);
         }
@@ -127,14 +112,13 @@ async function seed(): Promise<void> {
         console.log("🍔 Creating menu items...");
         const menuMap: Record<string, string> = {};
         for (const item of data.menu) {
-            // Bild-URL abrufen (aktuell nur externe URL)
             const imageUrl = await getImageUrl(item.image_url);
 
-            const row = await tablesDB.createRow(
-                appwriteConfig.databaseId,
-                appwriteConfig.menuTableId,
-                ID.unique(),
-                {
+            const row = await tablesDB.createRow({
+                databaseId: appwriteConfig.databaseId,
+                tableId: appwriteConfig.menuTableId,
+                rowId: ID.unique(),
+                data: {
                     name: item.name,
                     description: item.description,
                     image_url: imageUrl,
@@ -142,24 +126,31 @@ async function seed(): Promise<void> {
                     rating: item.rating,
                     calories: item.calories,
                     protein: item.protein,
-                    category_id: categoryMap[item.category_name], // Foreign Key zur Category
-                }
-            );
+                    categories: categoryMap[item.category_name],
+                },
+            });
 
             menuMap[item.name] = row.$id;
             console.log(`  ✓ Created menu item: ${item.name}`);
 
             // 5. Create menu_customizations (Junction Table)
+            // 🔧 WICHTIG: Korrektur hier!
             for (const cusName of item.customizations) {
-                await tablesDB.createRow(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.menuCustomizationsTableId,
-                    ID.unique(),
-                    {
-                        menu_id: row.$id, // Foreign Key zum Menu Item
-                        customization_id: customizationMap[cusName], // Foreign Key zur Customization
-                    }
-                );
+                try {
+                    await tablesDB.createRow({
+                        databaseId: appwriteConfig.databaseId,
+                        tableId: appwriteConfig.menuCustomizationsTableId,
+                        rowId: ID.unique(),
+                        data: {
+                            menu: row.$id,
+                            customizations: customizationMap[cusName],
+                        },
+                    });
+                    console.log(`    ✓ Linked customization: ${cusName}`);
+                } catch (error) {
+                    console.error(`    ✗ Error linking ${cusName}:`, error);
+                    // Wir ignorieren den Fehler und fahren fort
+                }
             }
         }
 

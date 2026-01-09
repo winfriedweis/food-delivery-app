@@ -1,4 +1,4 @@
-import {Account, Avatars, Client, ID, TablesDB} from "react-native-appwrite";
+import {Account, Avatars, Client, ID, TablesDB, Storage} from "react-native-appwrite";
 import {CreateUserParams, User} from "@/type";
 
 export const appwriteConfig = {
@@ -24,7 +24,7 @@ client
 export const account = new Account(client);
 export const tablesDB = new TablesDB(client); // NEU: TablesDB statt Databases - Appwrite Update
 export const avatars = new Avatars(client);
-
+export const storage = new Storage(client);
 /**
  * Erstellt einen neuen Benutzer mit Account und Datenbank-Eintrag
  * @param email - E-Mail des Benutzers
