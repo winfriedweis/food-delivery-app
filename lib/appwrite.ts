@@ -1,5 +1,5 @@
-import {Account, Avatars, Client, ID, TablesDB, Storage} from "react-native-appwrite";
-import {CreateUserParams, User} from "@/type";
+import {Account, Avatars, Client, ID, TablesDB, Storage, Query} from "react-native-appwrite";
+import {CreateUserParams, GetMenuParams, User} from "@/type";
 
 export const appwriteConfig = {
     endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
@@ -148,6 +148,21 @@ export const getCurrentUser = async (): Promise<User | null> => {
         // Damit wird guest session graceful gehandelt todo remove log
         console.log("[getCurrentUser] Not authenticated (this is expected):", error.message);
         return null;
+    }
+}
+
+export const getMenu = async ({category, query}: GetMenuParams) => {
+    try {
+        const queries: string[] = [];
+        if (category) {
+            queries.push(Query.equal("category", category));
+        }
+        if (query) {
+            queries.push(Query.search("name", query));
+        }
+        const menues = await tablesDB.listRows()
+    } catch (e) {
+        throw new Error(e as string)
     }
 }
 
