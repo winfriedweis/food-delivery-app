@@ -151,18 +151,43 @@ export const getCurrentUser = async (): Promise<User | null> => {
     }
 }
 
+
 export const getMenu = async ({category, query}: GetMenuParams) => {
     try {
-        const queries: string[] = [];
+        const queries: string[] = [];  // ✅ Query[], nicht string[]!
+
         if (category) {
-            queries.push(Query.equal("category", category));
+            // Filter nach Category-ID (Relationship)
+            queries.push(Query.equal("categories", category));
         }
+
         if (query) {
+            // Suche nach MenuItem-Namen
             queries.push(Query.search("name", query));
         }
-        const menues = await tablesDB.listRows()
+
+        const result = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseId,
+            tableId: appwriteConfig.menuTableId,
+            queries: queries
+        });
+
+        return result.rows;
+
+    } catch (error) {
+        console.error("[getMenu] Error:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to fetch menu");
+    }
+}
+
+export const getCategories = async () => {
+    try {
+        const categories = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseId,
+            tableId: appwriteConfig.categoriesTableId,
+        });
     } catch (e) {
-        throw new Error(e as string)
+        throw new Error(e as string);
     }
 }
 
