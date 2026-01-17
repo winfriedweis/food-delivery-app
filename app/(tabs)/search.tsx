@@ -6,6 +6,7 @@ import useAppwrite from "@/lib/useAppwrite";
 import {getCategories, getMenu} from "@/lib/appwrite";
 import {useLocalSearchParams} from "expo-router";
 import CartButton from "@/components/CartButton";
+import cn from "clsx";
 
 const Search = () => {
     const {category, query} = useLocalSearchParams<{ query: string; category: string }>()
@@ -29,9 +30,9 @@ const Search = () => {
             <FlatList
                 data={data}
                 renderItem={({item, index}) => {
-
+                    const isFirstRightColumnItem = index % 2 == 0;
                     return (
-                        <View className="flex-1 max-w-[48%]">
+                        <View className={cn("flex-1 max-w-[48%]", !isFirstRightColumnItem ? "mt-10" : "mt-0")}>
                             <Text>Menu Card</Text>
                         </View>
                     )
